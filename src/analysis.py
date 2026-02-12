@@ -1,1 +1,3 @@
-
+ranking_df.to_csv("outputs/rank_order.csv", index=False)
+...
+plt.savefig("outputs/rank_order.png")
