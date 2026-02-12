@@ -1,2 +1,1 @@
 # macc-exit-survey-ranking
-
