@@ -2,54 +2,55 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 
-# Ensure outputs folder exists
-os.makedirs("outputs", exist_ok=True)
+# -----------------------------
+# 1. Load Dataset
+# -----------------------------
+file_path = "data/exit_survey_2023.xlsx"
 
-# Load dataset
-file_path = "data/exit_survey_2024.xlsx"
 df = pd.read_excel(file_path)
 
 # -----------------------------
-# CLEANING STEP
+# 2. Keep Only Numeric Columns
 # -----------------------------
+numeric_df = df.select_dtypes(include="number")
 
-# Try converting all columns to numeric where possible
-df_numeric = df.apply(pd.to_numeric, errors="coerce")
+if numeric_df.empty:
+    raise ValueError("No numeric rating columns detected in dataset.")
 
-# Drop columns that are entirely NaN after conversion
-df_numeric = df_numeric.dropna(axis=1, how="all")
-
-if df_numeric.shape[1] == 0:
-    raise ValueError("No convertible numeric columns found in dataset.")
+# Drop rows that are completely empty
+numeric_df = numeric_df.dropna(how="all")
 
 # -----------------------------
-# CREATE RANKING
+# 3. Calculate Average Rankings
 # -----------------------------
+ranking_df = numeric_df.mean().reset_index()
+ranking_df.columns = ["Category", "Average Score"]
 
-averages = df_numeric.mean().sort_values(ascending=False)
-
-ranking_df = averages.reset_index()
-ranking_df.columns = ["Program_or_Course", "Average_Rating"]
-
-ranking_df["Rank"] = range(1, len(ranking_df) + 1)
+# Lower score = better rank (if 1 = best)
+ranking_df = ranking_df.sort_values("Average Score")
 
 # -----------------------------
-# SAVE OUTPUTS
+# 4. Ensure outputs folder exists
 # -----------------------------
+os.makedirs("outputs", exist_ok=True)
 
+# -----------------------------
+# 5. Save CSV
+# -----------------------------
 ranking_df.to_csv("outputs/rank_order.csv", index=False)
 
 # -----------------------------
-# CREATE FIGURE
+# 6. Create Bar Chart
 # -----------------------------
-
-plt.figure(figsize=(8, 6))
-plt.barh(ranking_df["Program_or_Course"], ranking_df["Average_Rating"])
-plt.gca().invert_yaxis()
-plt.xlabel("Average Rating")
-plt.title("Rank Order of Programs/Courses - 2024")
+plt.figure()
+plt.barh(ranking_df["Category"], ranking_df["Average Score"])
+plt.xlabel("Average Ranking")
+plt.ylabel("Category")
+plt.title("Exit Survey Ranking Results")
+plt.gca().invert_yaxis()  # Best ranking at top
 plt.tight_layout()
+
 plt.savefig("outputs/rank_order.png")
 plt.close()
 
-print("Analysis complete.")
+print("Analysis complete. Files saved to outputs folder.")
