@@ -10,23 +10,27 @@ file_path = "data/exit_survey_2024.xlsx"
 df = pd.read_excel(file_path)
 
 # -----------------------------
-# CLEANING + RESHAPING SECTION
+# CLEANING STEP
 # -----------------------------
 
-# Select numeric columns (assumes ratings are numeric)
-rating_columns = df.select_dtypes(include=["number"]).columns
+# Try converting all columns to numeric where possible
+df_numeric = df.apply(pd.to_numeric, errors="coerce")
 
-if len(rating_columns) == 0:
-    raise ValueError("No numeric rating columns detected in dataset.")
+# Drop columns that are entirely NaN after conversion
+df_numeric = df_numeric.dropna(axis=1, how="all")
 
-# Calculate average rating per column
-averages = df[rating_columns].mean().sort_values(ascending=False)
+if df_numeric.shape[1] == 0:
+    raise ValueError("No convertible numeric columns found in dataset.")
 
-# Convert to DataFrame
+# -----------------------------
+# CREATE RANKING
+# -----------------------------
+
+averages = df_numeric.mean().sort_values(ascending=False)
+
 ranking_df = averages.reset_index()
 ranking_df.columns = ["Program_or_Course", "Average_Rating"]
 
-# Add rank column
 ranking_df["Rank"] = range(1, len(ranking_df) + 1)
 
 # -----------------------------
@@ -49,4 +53,3 @@ plt.savefig("outputs/rank_order.png")
 plt.close()
 
 print("Analysis complete.")
-
